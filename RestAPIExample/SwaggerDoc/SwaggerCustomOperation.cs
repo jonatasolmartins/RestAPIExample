@@ -32,6 +32,22 @@ public class SwaggerCustomOperation : IOperationFilter
                 }
             });
         }
+
+        if(context.MethodInfo.CustomAttributes.Any(x => x.AttributeType == typeof(ResponseCacheAttribute)))
+        {
+            operation.Parameters.Add(  new OpenApiParameter()
+            {
+                Name = "Cache-Control",
+                In = ParameterLocation.Header,
+                Description = "Default cache value",
+                Required = false,
+                Schema = new OpenApiSchema()
+                {
+                    Type = "string",
+                    Default = new OpenApiString("public, max-age=20")
+                }
+            });
+        }
         
         if (!operation.Responses.ContainsKey("400"))
             operation.Responses.Add("400", CreateBadRequestResponse());
@@ -67,6 +83,7 @@ public class AuthSwaggerFilter : IOperationFilter
 
         if (operation.Parameters == null)
             operation.Parameters = new List<OpenApiParameter>();
+        
         
         operation.Parameters.Add(
             new OpenApiParameter()

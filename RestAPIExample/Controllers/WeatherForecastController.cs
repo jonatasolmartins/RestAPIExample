@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
+using RestAPIExample.Attributes;
 
 namespace RestAPIExample.Controllers;
 
 [ApiController]
 [Route("[controller]/[action]")]
+//[Produces("application/json", new []{"text/plain", "application/xml"})]
+[Produces("application/json")]
 public class WeatherForecastController : ControllerBase
 {
     private WeatherForecast[] _summaries = new[]
@@ -19,12 +21,14 @@ public class WeatherForecastController : ControllerBase
 
     [HttpGet]
     [ResponseCache(Duration = 60)] // Cache for 60 seconds
+    [ProducesResponseType<WeatherForecast>(200)]
     public IActionResult GetWeatherForecast()
     {
         return Ok(_summaries);
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType<WeatherForecastResource>(200)]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // Disable caching
     public IActionResult GetWeatherForecast(int id)
     {
@@ -51,6 +55,7 @@ public class WeatherForecastController : ControllerBase
     }
     
     [HttpPatch("{id:int}/{summary}")]
+    [NeedAutorization]
     public IActionResult PatchWeatherForecast(int id, string summary, [FromBody] PatchModel patch)
     {
         var forecast = _summaries.FirstOrDefault(s => s.Summary?.Equals(summary, StringComparison.OrdinalIgnoreCase) == true);
@@ -69,7 +74,14 @@ public class WeatherForecastController : ControllerBase
     /// <summary>
     /// Update a specific WeatherForecast by unique id
     /// </summary>
-    /// <remarks>Awesomeness!</remarks>
+    /// <remarks>
+    /// Example response:
+    ///
+    ///     {
+    ///        "id": 1
+    ///     }
+    ///
+    /// </remarks>
     /// <response code="203">WeatherForecast Updated</response>
     /// <response code="400">WeatherForecast not found</response>
     /// <response code="500">Oops! Can't updated your WeatherForecast right now</response>
@@ -93,14 +105,20 @@ public class WeatherForecastController : ControllerBase
     }
     
     [HttpPost]
-    [SwaggerOperation(
-        Summary = "Creates a new Weather Forecast",
-        Description = "Creates a new Weather Forecast with the specified details",
-        OperationId = "WeatherForecast.PostWeatherForecast",
-        Tags = new[] { "WeatherForecastEndpoints" })]
-    [SwaggerResponse(201, "Weather Forecast created successfully", typeof(WeatherForecast))]
+    // [SwaggerOperation(
+    //     Summary = "Creates a new Weather Forecast",
+    //     Description = "Creates a new Weather Forecast with the specified details",
+    //     OperationId = "WeatherForecast.PostWeatherForecast",
+    //     Tags = new[] { "WeatherForecastEndpoints" })]
+    // [SwaggerResponse(201, "Weather Forecast created successfully", typeof(WeatherForecast), new []{ "application/json" })]
+    // [SwaggerResponse(400, "Invalid input", null)]
+    [ProducesResponseType(typeof(WeatherForecast), 201)]
     public IActionResult PostWeatherForecast([FromBody] PostModel postModel)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
         var newForecast = new WeatherForecast(DateOnly.FromDateTime(DateTime.Now), postModel.TemperatureC, postModel.Summary, _summaries.Length + 1);
         Array.Resize(ref _summaries, _summaries.Length + 1);
         _summaries[^1] = newForecast;
@@ -161,10 +179,17 @@ public class PutModel(WeatherForecast weatherForecast)
 
 public class PostModel
 {
-    public int TemperatureC { get; set; }
+    public required int TemperatureC { get; set; }
     public string? Summary { get; set; }
 }
 
+/// <summary>
+/// test
+/// </summary>
+/// <param name="Date"></param>
+/// <param name="TemperatureC"></param>
+/// <param name="Summary"></param>
+/// <param name="id"></param>
 public record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary, int id)
 {
     public int TemperatureF => 32 + (int) (TemperatureC / 0.5556);

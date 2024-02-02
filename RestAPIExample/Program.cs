@@ -1,4 +1,5 @@
 using Microsoft.OpenApi.Models;
+using RestAPIExample.SwaggerDoc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,9 @@ builder.Services.AddSwaggerGen(c =>
    
     var filePath = Path.Combine(System.AppContext.BaseDirectory, "RestAPIExample.xml");
     c.IncludeXmlComments(filePath);
+    
+     c.OperationFilter<SwaggerCustomOperation>();
+     c.OperationFilter<AuthSwaggerFilter>();
 });
 
 var app = builder.Build();
@@ -38,6 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "WeatherForecast API");
         c.InjectStylesheet("/swagger-ui/custom.css");
     });
 }

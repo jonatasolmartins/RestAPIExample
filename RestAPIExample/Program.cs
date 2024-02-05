@@ -1,10 +1,23 @@
+using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
+using RestAPIExample;
 using RestAPIExample.SwaggerDoc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); 
+    });
+
+builder.Services.Configure<WeatherConfig>(builder.Configuration.GetSection("Weather"));
+
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddScoped(typeof(IGeniricServiceOne<>), typeof(GenericServiceOne<>));
+builder.Services.AddScoped(typeof(IGenericServiceTwo<,>), typeof(GenericServiceTwo<,>));
+
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.EnableAnnotations();
@@ -51,4 +64,21 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+public interface IGeniricServiceOne<T> where T: class { public string GetCode(); }
+public class GenericServiceOne<T> : IGeniricServiceOne<T> where T : class
+{
+    public string GetCode() => "200";
+}
+
+public interface IGenericServiceTwo<T, U> where T : class
+{
+    public string GetCode();
+}
+
+public class GenericServiceTwo<T, U> : IGenericServiceTwo<T, U> where T : class
+{
+    public string GetCode() => "200";
+}
+
 

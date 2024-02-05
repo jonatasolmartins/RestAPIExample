@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using RestAPIExample.Attributes;
 
 namespace RestAPIExample.Controllers;
@@ -6,8 +7,8 @@ namespace RestAPIExample.Controllers;
 [ApiController]
 [Route("[controller]/[action]")]
 //[Produces("application/json", new []{"text/plain", "application/xml"})]
-[Produces("application/json")]
-public class WeatherForecastController : ControllerBase
+//[Produces("application/json")]
+public class WeatherForecastController(IOptionsMonitor<WeatherConfig> options) : ControllerBase
 {
     private WeatherForecast[] _summaries = new[]
     {
@@ -17,13 +18,17 @@ public class WeatherForecastController : ControllerBase
         new WeatherForecast(DateOnly.FromDateTime(DateTime.Now), 35, "Scorching", 4),
         new WeatherForecast(DateOnly.FromDateTime(DateTime.Now), 45, "Burning", 5),
     };
-
+    
+    private readonly WeatherConfig _config = options.CurrentValue;
 
     [HttpGet]
-    [ResponseCache(Duration = 60)] // Cache for 60 seconds
+    //[ResponseCache(Duration = 60)] // Cache for 60 seconds
     [ProducesResponseType<WeatherForecast>(200)]
     public IActionResult GetWeatherForecast()
     {
+        // Just for demo propose
+        var summary = _config.Summary;
+        
         return Ok(_summaries);
     }
 
@@ -216,3 +221,6 @@ public struct WeatherForecastResource
     public WeatherForecast WeatherForecast { get; set; }
     public List<Link> Links { get; set; }
 }
+
+
+
